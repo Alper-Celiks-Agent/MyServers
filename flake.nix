@@ -3,6 +3,20 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixos-26.05";
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
     hermes-agent.url = "github:NousResearch/hermes-agent";
+    # Community browser front-end for Hermes (runs the agent in-process, so it
+    # uses the REAL Hermes sessions instead of a stateless OpenAI-compatible
+    # API). Its own nixpkgs follows ours so the package builds on the fleet's
+    # 26.05 pin. It declares NO hermes-agent input of its own — the agent is
+    # shared one level up, via agent.package =
+    # config.services.hermes-agent.package in webui.nix, so there is exactly
+    # one hermes-agent pin in this lock. Bump this input TOGETHER with
+    # hermes-agent anyway: the WebUI imports agent internals directly and its
+    # compatibility policy supports only matching versions (README
+    # "Compatibility").
+    hermes-webui = {
+      url = "github:nesquena/hermes-webui";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
     nixos-raspberrypi = {
       url = "github:nvmd/nixos-raspberrypi/develop";

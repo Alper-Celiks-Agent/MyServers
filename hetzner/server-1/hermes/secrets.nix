@@ -14,6 +14,7 @@
     GITHUB_TOKEN_AI = { };
     CONTEXT7_API_KEY = { };
     GRAFANA_SERVICE_ACCOUNT_TOKEN = { };
+    WEBUI_PASSWORD = { };
   };
 
   # rendered into the env file the gateway reads at startup; the raw secrets
@@ -35,7 +36,25 @@
     restartUnits = [
       "hermes-agent.service"
       "hermes-backend.service"
+      # The WebUI runs the agent in-process against the same HERMES_HOME, so
+      # provider-key changes restart it too (its warm agent instances cache
+      # config; a restart is the only guarantee they re-read it).
+      "hermes-webui.service"
     ];
+  };
+
+  sops.templates."webui-env" = {
+    # HERMES_WEBUI_PASSWORD enables the WebUI's password auth (off by
+    # default). The service binds 127.0.0.1 (webui.nix), so this gates SSH
+    # tunnels today and is the first gate if a caddy vhost ever lands.
+    # NOT a protected runtime key — the upstream module's ExecStartPre check
+    # only rejects host/port/state/agent wiring in environmentFiles.
+    content = ''
+      HERMES_WEBUI_PASSWORD=${config.sops.placeholder.WEBUI_PASSWORD}
+    '';
+    owner = config.users.users.hermes.name;
+    group = config.users.groups.hermes.name;
+    restartUnits = [ "hermes-webui.service" ];
   };
 
   # gh CLI credentials for the AGENT's shell (gh comes from extraPackages).
